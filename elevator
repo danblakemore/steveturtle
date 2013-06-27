@@ -1,12 +1,12 @@
 -- go up when you see the signal, then wait 10 seconds, then go back down
 while true do
         if redstone.getInput("front") then
-                for i 1, 50 do
+                for i = 1, 50 do
                         turtle.up()
                         sleep(0.2)
                 end
                 sleep(10)
-                for i 1, 50 do
+                for i = 1, 50 do
                         turtle.down()
                 end
         else
