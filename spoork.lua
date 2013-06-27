@@ -125,6 +125,7 @@ function main()
 				-- go back to the start column and move down three blocks
 				if mineLevel == mineLevelCap - 1 then
 					currState = state.RETURNING
+					shouldResume = false
 				else
 					moveToDestination(homeX, currY, homeZ, homeOr)
 					decreaseLevel()
