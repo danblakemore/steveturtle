@@ -81,7 +81,7 @@ function main()
 			if mineCol > 0 then
 				turnToCardinal(cardinals.NORTH)
 				forward()
-			else
+			end
 			-- turn so we can back out
 			turnToCardinal(cardinals.EAST)
 		end
