@@ -15,7 +15,7 @@ local noiseBlocksCount
 local bottomLayer = 5 -- The y co-ords of the layer immediately above bedrock
 
 -- where the heart is
-local homeX = 112
+local homeX = 144
 local homeY = 15
 local homeZ = 160
 local homeOr = cardinals.EAST
@@ -93,7 +93,6 @@ function main()
 			returnToBase()
 		elseif currState == state.DROPOFF then
 			dropoff()
-			turnToCardinal(homeOr)
 			if shouldResume then
 				currState = state.RESUMING
 			else
@@ -127,7 +126,7 @@ function main()
 				if mineLevel == mineLevelCap - 1 then
 					currState = state.RETURNING
 				else
-					moveToDestination(homeX, currY, homeZ)
+					moveToDestination(homeX, currY, homeZ, homeOr)
 					decreaseLevel()
 					miningState = minestate.DIGGING
 					mineLevel = mineLevel + 1
@@ -434,7 +433,6 @@ function move(moveDir)
 		end
 		currY = currY - 1
 	end
-	print("x " .. currX .. " y " .. currY .. " z " .. currZ)
 	-- couldn't move
 end
 
@@ -525,10 +523,10 @@ function resolveRelative(cardinal)
 	if relativeOffset == 0 then
 		-- go forward
 		return direction.FORWARD
-	elseif relativeOffset == -1 then
+	elseif relativeOffset == -1 or relativeOffset == 3 then
 		-- go right
 		return direction.RIGHT
-	elseif relativeOffset == 1 then
+	elseif relativeOffset == 1 or relativeOffset == -3 then
 		-- go left
 		return direction.LEFT
 	else
