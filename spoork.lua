@@ -77,11 +77,13 @@ function main()
 			savedOr = currOr
 			shouldResume = true
 			currState = state.RETURNING
-			-- back out of this row
-			turnToCardinal(cardinals.NORTH)
-			forward()
-			-- turn to we can back out
-			turnRight()
+			-- back out of this column (if we are on a column besides 1)
+			if mineCol > 0 then
+				turnToCardinal(cardinals.NORTH)
+				forward()
+			else
+			-- turn so we can back out
+			turnToCardinal(cardinals.EAST)
 		end
 		
 		-- switch on state and see what we should do
@@ -292,7 +294,7 @@ function isInventoryFull()
 			return false
 		end
 	end
-	return cleanInventory() -- only clean if necessary
+	return not cleanInventory() -- only clean if necessary
 end
 
 -- eliminate filter blocks in inventory and empty those stacks
