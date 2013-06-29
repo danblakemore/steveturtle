@@ -64,9 +64,8 @@ function main()
 		print(currState)
 		-- check if we need to go back (starving)
 		if not checkFuel() and currState == state.MINING then
-			returnToBase()
-			currState = state.STOPPED
-			return
+			shouldReturn = false
+			currState = state.RETURNING
 		end
 		
 		-- check if we need to go back (full)
@@ -77,19 +76,20 @@ function main()
 			savedOr = currOr
 			shouldResume = true
 			currState = state.RETURNING
-			-- back out of this column (if we are on a column besides 1)
+		end
+		
+		-- switch on state and see what we should do
+		if currState == state.STOPPED then
+			-- DO NOTHING
+			return
+		elseif currState == state.RETURNING then
+			-- back out of this column (if we are on a column besides 0)
 			if mineCol > 0 then
 				turnToCardinal(cardinals.NORTH)
 				forward()
 			end
 			-- turn so we can back out
 			turnToCardinal(cardinals.EAST)
-		end
-		
-		-- switch on state and see what we should do
-		if currState == state.STOPPED then
-			-- DO NOTHING
-		elseif currState == state.RETURNING then
 			returnToBase()
 		elseif currState == state.DROPOFF then
 			dropoff()
@@ -102,7 +102,7 @@ function main()
 			resumeMining()
 			currState = state.MINING
 		elseif currState == state.MINING then
-			-- for now, mine south-east from home 
+			-- mine south-east from home 
 			if miningState == minestate.DIGGING then
 				mineForwardOneBlockAndLookAround()
 				mineRow = mineRow + rowCountModifier
@@ -169,20 +169,6 @@ function decreaseLevel()
 	end
 end
 
--- moves to the specified coordinates (assumes a clear path)
-function moveToDestination(x, y, z, Or)
-	local areWeThereYet = false
-	while not areWeThereYet do
-		local moveDir = helpMoveToPoint(x, y, z)
-		if moveDir == direction.NONE then
-			areWeThereYet = true
-		else
-			move(moveDir) -- should check error, not going to
-		end
-	end
-	turnToCardinal(Or)
-end
-
 -- takes care of the details of digging forward and looking for ore.
 function mineForwardOneBlockAndLookAround()
 	-- mine a block in the direction we are moving
@@ -217,48 +203,6 @@ function lookForTreasure(compareFunctionPointer)
 		end
 	end
 	return true
-end
-
--- get direction to move to get to a specified point
-function helpMoveToPoint(x, y, z)
-	-- move from curr* pos toward x,y,z specified
-	-- move in the direction with the highest delta of x or z
-	-- move in y only if already at x and z
-	-- south is +z, east is +x
-	if currZ == z and currY == y and currX == x then
-		return direction.NONE
-	end
-	
-	local zDiff = currZ - z
-	local xDiff = currX - x
-	local yDiff = currY - y
-	
-	-- move in x first, then z, then y
-	if xDiff ~= 0 then
-		-- move in X
-		-- if xdiff is positive, subtract x (go west), else add x (go east)
-		if xDiff > 0 then
-			return resolveRelative(cardinals.WEST)
-		else
-			return resolveRelative(cardinals.EAST)
-		end
-	elseif zDiff ~= 0 then
-		-- move in Z
-		-- if zdiff is positive, subtract z (go north), else add z (go south)
-		if zDiff > 0 then
-			return resolveRelative(cardinals.NORTH)
-		else
-			return resolveRelative(cardinals.SOUTH)
-		end
-	else
-		-- if zdiff and xdiff are 0, then we should move vertically
-		-- ydiff is positive, we are above it, so move down, else move up
-		if yDiff > 0 then
-			return direction.DOWN
-		else
-			return direction.UP
-		end
-	end
 end
 
 -- 
@@ -341,15 +285,8 @@ end
 -- takes the turtle back to base, or as close as we can get on our fuel level
 function returnToBase()
 	-- move to the home coordinates
-	-- movement strategy is to move horizontally and only move vertically when over the home point
-	while currState ~= state.DROPOFF do
-		local moveDir = helpMoveToPoint(homeX, homeY, homeZ)
-		if moveDir == direction.NONE then
-			currState = state.DROPOFF
-		else
-			move(moveDir) -- should check error, not going to
-		end
-	end
+	moveToDestination(homeX, homeY, homeZ, homeOr)
+	currState = state.DROPOFF
 end
 
 -- empty inventory into chest behind
@@ -374,6 +311,26 @@ function resumeMining()
 	
 	-- now go back to where we were mining
 	moveToDestination(savedX, savedY, savedZ, savedOr)
+end
+
+-- moves to the specified coordinates (assumes a clear path)
+function moveToDestination(x, y, z, Or)
+	local areWeThereYet = false
+	while not areWeThereYet do
+		local moveDir = helpMoveToPoint(x, y, z)
+		if moveDir == direction.NONE then
+			areWeThereYet = true
+		elseif moveDir == direction.RIGHT then
+			-- don't waste time preserving orientation when we restore it anyway
+			turnRight()
+		elseif moveDir == direction.LEFT then
+			-- ditto
+			turnLeft()
+		else
+			move(moveDir) -- should check error, not going to
+		end
+	end
+	turnToCardinal(Or)
 end
 
 -- move and keep track of motion
@@ -434,7 +391,48 @@ function move(moveDir)
 		end
 		currY = currY - 1
 	end
-	-- couldn't move
+end
+
+-- get direction to move to get to a specified point
+function helpMoveToPoint(x, y, z)
+	-- move from curr* pos toward x,y,z specified
+	-- move in the direction with the highest delta of x or z
+	-- move in y only if already at x and z
+	-- south is +z, east is +x
+	if currZ == z and currY == y and currX == x then
+		return direction.NONE
+	end
+	
+	local zDiff = currZ - z
+	local xDiff = currX - x
+	local yDiff = currY - y
+	
+	-- move in x first, then z, then y
+	if xDiff ~= 0 then
+		-- move in X
+		-- if xdiff is positive, subtract x (go west), else add x (go east)
+		if xDiff > 0 then
+			return resolveRelative(cardinals.WEST)
+		else
+			return resolveRelative(cardinals.EAST)
+		end
+	elseif zDiff ~= 0 then
+		-- move in Z
+		-- if zdiff is positive, subtract z (go north), else add z (go south)
+		if zDiff > 0 then
+			return resolveRelative(cardinals.NORTH)
+		else
+			return resolveRelative(cardinals.SOUTH)
+		end
+	else
+		-- if zdiff and xdiff are 0, then we should move vertically
+		-- ydiff is positive, we are above it, so move down, else move up
+		if yDiff > 0 then
+			return direction.DOWN
+		else
+			return direction.UP
+		end
+	end
 end
 
 -- move north and keep track of motion
