@@ -291,14 +291,12 @@ end
 
 -- empty inventory into chest behind
 function dropoff()
-	turnRight()
-	turnRight()
+	turnToCardinal(cardinals.WEST)
 	for i = (filterBlockCount + 1), 15 do -- ignore filter blocks and fuel level
 		turtle.select(i)
 		turtle.drop()
 	end
-	turnRight()
-	turnRight()
+	turnToCardinal(cardinals.EAST)
 end
 
 -- go back to the saved location and start mining again
