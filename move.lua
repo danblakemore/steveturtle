@@ -52,7 +52,6 @@ end
 function returnToBase()
 	-- move to the home coordinates
 	moveToDestination(homeX, homeY, homeZ, homeOr)
-	currState = state.DROPOFF
 end
 
 -- moves to the specified coordinates (assumes a clear path)

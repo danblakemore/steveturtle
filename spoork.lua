@@ -52,6 +52,7 @@ function main()
 			-- turn so we can back out
 			move.faceEast()
 			move.returnToBase()
+			currState = state.DROPOFF
 		elseif currState == state.DROPOFF then
 			dropoff()
 			if shouldResume then
@@ -60,7 +61,7 @@ function main()
 				currState = state.STOPPED
 			end
 		elseif currState == state.RESUMING then
-			move.resumeMining()
+			resumeMining()
 			currState = state.MINING
 		elseif currState == state.MINING then
 			-- mine south-east from home 
@@ -93,6 +94,7 @@ function main()
 					miningState = minestate.DIGGING
 					mineLevel = mineLevel + 1
 					rowCountModifier = 1
+					mineRow = 0
 					move.faceHome()
 				end
 			end
